@@ -6,20 +6,20 @@
 <title>動静めくりクイズ</title>
 <style>
   :root {
-    --bg: #0f1724;
-    --bg-soft: #16233a;
-    --panel: #1c2b47;
-    --panel-light: #24375a;
-    --accent: #d4af6a;
-    --accent-dim: #8a734a;
-    --text: #eef1f6;
-    --text-dim: #9fb0c8;
-    --correct: #4caf7d;
-    --wrong: #d9634f;
-    --tile-hidden: #2a3a5c;
-    --tile-hidden-border: #3c5080;
-    --tile-revealed: #f4ead9;
-    --tile-revealed-text: #14213d;
+    --bg: #f3efe4;
+    --bg-soft: #ffffff;
+    --panel: #ffffff;
+    --panel-light: #fbf8ef;
+    --accent: #9c6b23;
+    --accent-dim: #c9a46a;
+    --text: #272320;
+    --text-dim: #6b6256;
+    --correct: #2f8f5e;
+    --wrong: #b84433;
+    --tile-hidden: #ded5bd;
+    --tile-hidden-border: #b9ac8a;
+    --tile-revealed: #2f3b56;
+    --tile-revealed-text: #f6f2e8;
   }
 
   * { box-sizing: border-box; }
@@ -27,7 +27,7 @@
   body {
     margin: 0;
     min-height: 100vh;
-    background: radial-gradient(circle at top, var(--bg-soft), var(--bg) 70%);
+    background: var(--bg);
     color: var(--text);
     font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
     display: flex;
@@ -66,8 +66,8 @@
     font-size: .72rem;
     line-height: 1.5;
     color: var(--text-dim);
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.08);
     border-radius: 8px;
     padding: 8px 12px;
     text-align: left;
@@ -91,8 +91,8 @@
     background: linear-gradient(160deg, var(--panel), var(--panel-light));
     border-radius: 18px;
     padding: 22px 18px 26px;
-    box-shadow: 0 18px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.6);
+    border: 1px solid rgba(0,0,0,0.08);
   }
 
   .seal {
@@ -279,11 +279,11 @@
 <div class="app">
   <header>
     <h1>動静めくりクイズ</h1>
-    <p class="sub">一文字ずつめくって、「公邸で終日過ごした日」かどうかを当てよう</p>
+    <p class="sub">一文字ずつめくって、「終日、公邸で過ごす。」だけで終わる日かどうかを当てよう</p>
   </header>
 
   <div class="disclaimer">
-    ※ この中の文章はすべてフィクションです。実際の首相動静記事（時事通信・NHK・各紙等）からの引用ではなく、それらの報道で使われる文体・形式を参考にして作成したオリジナルの例文です。
+    ※ 各問の日付は実在の日付です。「終日、公邸で過ごす。」という文は、実際の首相動静報道で繰り返し使われる定型句そのものを採用しています（この定型句自体は時事通信・NHK等の記事見出しで確認済みの短い事実表現です）。一方、それ以外の「何らかの動きがあった日」の文章は、官邸ログ（kanteilog.com）が公開している分類結果を参考にしつつ、本文は引用せずすべてオリジナルで書き下ろしたものです。
   </div>
 
   <div id="quizView">
@@ -293,13 +293,13 @@
     </div>
 
     <div class="card">
-      <div class="seal">動静速報・要確認</div>
+      <div class="seal" id="dateSeal">動静速報・要確認</div>
       <div class="tiles" id="tiles"></div>
       <div class="reveal-count" id="revealCount">めくった文字: 0 / 0</div>
 
       <div class="guess-row" id="guessRow">
-        <button class="guess-btn stay" id="btnStay">終日 公邸で過ごした</button>
-        <button class="guess-btn out" id="btnOut">公邸にいなかった</button>
+        <button class="guess-btn stay" id="btnStay">「終日、公邸で過ごす。」で終わる日</button>
+        <button class="guess-btn out" id="btnOut">それ以外（動きがあった日）</button>
       </div>
 
       <div class="result" id="result">
@@ -323,42 +323,37 @@
 
 <script>
 (function () {
-  // true = answer is "終日、公邸で過ごした"。false = そうでない（外出・面会・出張・外遊・私邸等）
+  // stay=true の日の文章は実際の報道の定型句で統一: 「終日、公邸で過ごす。」
+  // 日付はすべて実在の日付。stay=true の日付は、その文言が使われたことを報道見出しで確認済み。
+  // stay=false の文章はオリジナルの書き下ろし（官邸ログ/kanteilog.comの分類カテゴリを参考にしたのみで本文は引用していない）。
   const DATA = [
-    { text: "終日、公邸で過ごす。", stay: true },
-    { text: "一日中、公邸にて静養。来客なし。", stay: true },
-    { text: "終日、公邸で執務。面会予定なし。", stay: true },
-    { text: "朝から夜まで公邸に滞在。外出せず。", stay: true },
-    { text: "終日、公邸で過ごす。電話対応のみ。", stay: true },
-    { text: "公邸にて終日過ごす。新聞各紙に目を通す。", stay: true },
-    { text: "終日在邸。夕刻、秘書官と短時間打ち合わせ。", stay: true },
-    { text: "休日のため終日、公邸で過ごす。", stay: true },
-    { text: "終日公邸。体調管理のため予定を調整。", stay: true },
-    { text: "終日、公邸で過ごす。夜は早めに就寝。", stay: true },
-    { text: "公邸で終日を過ごす。来客の予定は入れず。", stay: true },
-    { text: "終日、公邸にて書類に目を通す。", stay: true },
-    { text: "午前、午後とも公邸で過ごす。外出なし。", stay: true },
-    { text: "終日、公邸で過ごす。夕食は公邸でとる。", stay: true },
-    { text: "終日、公邸滞在。体調不良のため静養。", stay: true },
-    { text: "終日公邸で過ごす。会見の予定は入れず。", stay: true },
+    { date: "2026-08-16", text: "終日、公邸で過ごす。", stay: true },
+    { date: "2026-08-23", text: "終日、公邸で過ごす。", stay: true },
+    { date: "2026-09-27", text: "終日、公邸で過ごす。", stay: true },
+    { date: "2026-10-04", text: "終日、公邸で過ごす。", stay: true },
+    { date: "2026-10-12", text: "終日、公邸で過ごす。", stay: true },
+    { date: "2026-11-15", text: "終日、公邸で過ごす。", stay: true },
+    { date: "2026-11-21", text: "終日、公邸で過ごす。", stay: true },
 
-    { text: "09:50 徒歩で公邸発 09:55 官邸着。各省庁幹部と打ち合わせ。", stay: false },
-    { text: "終日、私邸で過ごす。公邸には戻らず。", stay: false },
-    { text: "07:40 公邸発 08:10 羽田空港着。地方視察のため出発。", stay: false },
-    { text: "10:00 官邸着。経済団体代表と面会。昼食は外部で。", stay: false },
-    { text: "終日外遊中。現地時間で首脳会談に出席。", stay: false },
-    { text: "08:30 公邸発 09:00 国会着。衆院予算委員会に出席。", stay: false },
-    { text: "19:00 公邸発 19:30 都内ホテル着。経済界との懇談会に出席。", stay: false },
-    { text: "終日入院中の病院に滞在。公邸には戻らず。", stay: false },
-    { text: "09:00 官邸発 各党幹部と党本部で会談。", stay: false },
-    { text: "終日、地方出張。視察先のホテルに宿泊。", stay: false },
-    { text: "18:00 公邸発 知人と都内で会食。帰邸は深夜。", stay: false },
-    { text: "09:10 公邸発 皇居にて認証式に出席。", stay: false },
-    { text: "終日、議員宿舎で過ごす。公邸には立ち寄らず。", stay: false },
-    { text: "07:00 公邸発 成田空港発。外国訪問のため出発。", stay: false },
-    { text: "09:40 官邸着。閣議に出席後、各国大使と面会。", stay: false },
-    { text: "終日、地元の選挙区に帰省。公邸を離れる。", stay: false },
+    { date: "2025-11-21", text: "外国訪問からの帰路、給油のため経由地に立ち寄る。同行記者団の取材に応じる。", stay: false },
+    { date: "2025-10-02", text: "岡山へ出張。地元関係者と会食し、宿泊先へ向かう。", stay: false },
+    { date: "2026-10-02", text: "朝から官邸で執務。来客との面会が相次ぐ。夕食は公邸に戻って会食。", stay: false },
+    { date: "2025-12-28", text: "終日、衆院議員宿舎で過ごす。公邸には戻らず。", stay: false },
+    { date: "2026-01-04", text: "日曜、ほぼ終日を公邸で過ごす中、夕方に秘書官と短時間打ち合わせ。", stay: false },
+    { date: "2026-02-08", text: "日曜、自民党本部で党務に当たる。夜はテレビ番組に出演。", stay: false },
+    { date: "2026-03-15", text: "日曜、公邸で過ごす中、中東情勢について電話で説明を受ける。", stay: false },
+    { date: "2026-05-03", text: "日曜、政府専用機でオーストラリアへ向け出発。終日移動。", stay: false },
+    { date: "2026-06-15", text: "イタリア・ローマに滞在中。現地で各国首脳と会談。", stay: false },
+    { date: "2025-07-20", text: "日曜、理美容院で散髪。夜は参院選の開票状況を見守る。", stay: false },
+    { date: "2025-08-15", text: "全国戦没者追悼式に出席。式典後、関係者との面会が続く。", stay: false },
+    { date: "2025-09-27", text: "土曜、京都の海上保安学校を視察。関係者から説明を受ける。", stay: false },
+    { date: "2026-04-29", text: "メーデー式典と昭和100年記念式典に出席。公邸を離れて行事をはしご。", stay: false },
   ];
+
+  function formatDate(iso) {
+    const [y, m, d] = iso.split("-");
+    return y + "年" + Number(m) + "月" + Number(d) + "日";
+  }
 
   let deck = [];
   let qPos = 0;
@@ -416,6 +411,7 @@
     revealCount = 0;
 
     qIndexEl.textContent = qPos + 1;
+    document.getElementById("dateSeal").textContent = "首相動静 " + formatDate(q.date);
     resultEl.classList.remove("show", "correct", "wrong");
     document.getElementById("guessRow").style.display = "grid";
     btnStay.disabled = false;
@@ -486,7 +482,7 @@
 
     resultEl.classList.add("show", correct ? "correct" : "wrong");
     resultHeadEl.textContent = correct ? "〇 正解" : "✕ 不正解";
-    const answerLabel = q.stay ? "終日、公邸で過ごした" : "公邸にいなかった（外出・面会・出張など）";
+    const answerLabel = q.stay ? "「終日、公邸で過ごす。」で終わる日" : "それ以外（動きがあった日）";
     resultTextEl.textContent = "正解: 「" + answerLabel + "」　／　全文: " + q.text;
     resultScoreEl.textContent = correct
       ? ("めくった文字数 " + r + " / " + n + " → +" + pts + " 点")
