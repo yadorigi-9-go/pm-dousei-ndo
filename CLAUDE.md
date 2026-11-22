@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-「動静めくりクイズ」(public residence stay-day quiz) — an Astro + TypeScript single-page quiz app. The player taps tiles to reveal a Japanese sentence describing a real historical date one character at a time, then guesses whether that day was a "stayed at official residence all day" day (`stay: true`) or not, trading unrevealed characters for a higher score.
+「首相動静 日めくりクイズ」(public residence stay-day quiz) — an Astro + TypeScript single-page quiz app. The player taps tiles to reveal a Japanese sentence describing a real historical date one character at a time, then guesses whether that day was a "stayed at official residence all day" day (`stay: true`) or not, trading unrevealed characters for a higher score.
 
 ## Commands
 
