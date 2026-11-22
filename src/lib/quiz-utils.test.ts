@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calcScore, formatDate, getYesterdayISO, shuffle } from "./quiz-utils";
+import { calcScore, formatDate, formatShareDate, getYesterdayISO, shuffle } from "./quiz-utils";
 
 describe("formatDate", () => {
   it("formats an ISO date with the correct Japanese weekday", () => {
@@ -32,6 +32,13 @@ describe("getYesterdayISO", () => {
 
   it("handles month and year boundaries", () => {
     expect(getYesterdayISO(new Date(2026, 0, 1))).toBe("2025-12-31");
+  });
+});
+
+describe("formatShareDate", () => {
+  it("formats a date as Y/M/D without zero-padding", () => {
+    expect(formatShareDate(new Date(2026, 10, 22))).toBe("2026/11/22");
+    expect(formatShareDate(new Date(2026, 0, 1))).toBe("2026/1/1");
   });
 });
 
