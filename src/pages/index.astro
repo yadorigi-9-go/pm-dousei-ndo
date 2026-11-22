@@ -292,17 +292,16 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     }
 
     async function onShareClick(): Promise<void> {
-      const text = `「首相動静 日めくりクイズ」\n${answerRows.join("\n")}\n正解数 ${correctCount} / ${totalAnswered}、スコア ${score} 点でした！`;
-      const url = location.href;
+      const text = `「首相動静 日めくりクイズ」\n${answerRows.join("\n")}\n正解数 ${correctCount} / ${totalAnswered}、スコア ${score} 点でした！\n${location.href}`;
       if (navigator.share) {
         try {
-          await navigator.share({ text, url });
+          await navigator.share({ text });
         } catch {
           // ユーザーがキャンセルした場合などはそのまま何もしない
         }
         return;
       }
-      const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+      const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
       window.open(intentUrl, "_blank", "noopener,noreferrer");
     }
 
