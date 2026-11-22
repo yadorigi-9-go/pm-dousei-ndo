@@ -5,7 +5,10 @@ import Layout from "../layouts/Layout.astro";
 const questions = (await getCollection("questions")).map((entry) => entry.data);
 ---
 
-<Layout title="動静めくりクイズ">
+<Layout
+  title="動静めくりクイズ"
+  description="一文字ずつめくって、「終日、公邸で過ごす。」だけで終わる日かどうかを当てるクイズ。実在の首相動静データをもとにしたオリジナルの問題で遊べます。"
+>
   <div class="app">
     <header>
       <h1>動静めくりクイズ</h1>
