@@ -36,6 +36,7 @@ jobs:
           git checkout -b "$BRANCH"
           git add src/content/questions
           git commit -m "chore: add question for ${DATE}"
-          git push origin "$BRANCH"
+          # force-push in case a previous failed run left this date's branch behind
+          git push --force origin "$BRANCH"
           gh pr create --title "chore: add question for ${DATE}" --body "scripts/update-daily-question.mjs による自動追加" --base main --head "$BRANCH"
           gh pr merge "$BRANCH" --squash --delete-branch
