@@ -15,8 +15,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     </header>
 
     <div class="disclaimer">
-      ※ 各問の日付は実在の日付です。「終日、公邸で過ごしたか」「場所」「分類ごとの活動時間」といった数値・事実は、歴代首相動静を構造化して公開しているGitHubリポジトリ
-      isamu/sori（出典: 官邸ログ／kanteilog.com が時事通信社・日本経済新聞社・朝日新聞社の首相動静を数値化したもの）を参照しています。個々の記事本文やラベルの原文は引用せず、文章はこの数値・事実のみを根拠にすべてオリジナルで書き下ろしています。
+      ※ 日付はすべて実在の日付です。文章はGitHub公開データ（isamu/sori）の数値・事実のみを参照したオリジナルの書き下ろしで、記事本文からの引用は行っていません。
     </div>
 
     <div id="quizView">
@@ -74,9 +73,12 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
 
     const QUESTIONS = window.__QUESTIONS__;
 
+    const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+
     function formatDate(iso: string): string {
-      const [y, m, d] = iso.split("-");
-      return `${y}年${Number(m)}月${Number(d)}日`;
+      const [y, m, d] = iso.split("-").map(Number);
+      const weekday = WEEKDAYS[new Date(y, m - 1, d).getDay()];
+      return `${y}年${m}月${d}日（${weekday}）`;
     }
 
     function shuffle<T>(arr: T[]): T[] {
