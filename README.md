@@ -41,3 +41,8 @@ Node.js 22 以上が必要です（Astro 7の要件）。
 ## 技術構成
 
 Astro + TypeScript製の静的サイトで、クライアント側フレームワークは使用していません。詳しいアーキテクチャは [CLAUDE.md](./CLAUDE.md) を参照してください。
+
+## Special Sorry
+
+- [Mondo — 指定オープンクイズ](https://mondo.quizknock.com)
+- [高市早苗](https://twitter.com/takaichi_sanae)
