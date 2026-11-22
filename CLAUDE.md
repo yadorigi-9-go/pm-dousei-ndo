@@ -12,16 +12,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev       # astro dev — local dev server
 npm run build     # astro build — type-checks via astro sync + outputs static site to dist/
 npm run preview   # astro preview — serve the built dist/ locally
+npm test          # vitest run — runs unit tests in src/lib/*.test.ts
 node scripts/update-daily-question.mjs [YYYY-MM-DD]  # fetch+add one day's question from kanteilog.com (defaults to yesterday, JST); no-ops if the file already exists or the page isn't published yet
 ```
 
-There is no test suite and no lint command configured. Type checking happens as part of `astro build` (and via `@astrojs/check`, which astro build runs internally); there is no separate `tsc`/`astro check` script defined, so run `npx astro check` directly if you need type checking without a full build.
+There is no lint command configured. Type checking happens as part of `astro build` (and via `@astrojs/check`, which astro build runs internally); there is no separate `tsc`/`astro check` script defined, so run `npx astro check` directly if you need type checking without a full build.
+
+Unit tests (Vitest) cover the pure, DOM-free helpers in `src/lib/quiz-utils.ts` only — there is no test coverage for the DOM/game-loop logic inline in `src/pages/index.astro`, since that code is tightly coupled to the DOM and not easily unit-tested in isolation.
 
 The site is deployed to GitHub Pages as a project page; `astro.config.mjs` sets `site`/`base` accordingly (`base: "/pm-dousei-ndo"`). If the repo is ever renamed, `base` must be updated to match.
 
 ## CI (`.github/workflows/`)
 
-- `deploy.yml`: builds and deploys to GitHub Pages on every push to `main` (requires the repo's Pages source set to "GitHub Actions" in its settings — a one-time manual step, not something this workflow can do itself).
+- `ci.yml`: runs `npm test` and `npm run build` on every pull request.
+- `deploy.yml`: runs `npm test`, then builds and deploys to GitHub Pages, on every push to `main` (requires the repo's Pages source set to "GitHub Actions" in its settings — a one-time manual step, not something this workflow can do itself).
 - `update-daily-question.yml`: runs `scripts/update-daily-question.mjs` daily (07:30 JST, after kanteilog.com's ~07:00 JST data update) and commits+pushes the new question file straight to `main` if one was added.
 
 ## Architecture
