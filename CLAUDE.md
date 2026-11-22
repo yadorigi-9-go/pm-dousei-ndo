@@ -21,8 +21,8 @@ The site is deployed to GitHub Pages as a project page; `astro.config.mjs` sets 
 
 ## CI (`.github/workflows/`)
 
-- `deploy.yml`: builds and deploys to GitHub Pages on every push to `master` (requires the repo's Pages source set to "GitHub Actions" in its settings — a one-time manual step, not something this workflow can do itself).
-- `update-daily-question.yml`: runs `scripts/update-daily-question.mjs` daily (07:30 JST, after kanteilog.com's ~07:00 JST data update) and commits+pushes the new question file straight to `master` if one was added.
+- `deploy.yml`: builds and deploys to GitHub Pages on every push to `main` (requires the repo's Pages source set to "GitHub Actions" in its settings — a one-time manual step, not something this workflow can do itself).
+- `update-daily-question.yml`: runs `scripts/update-daily-question.mjs` daily (07:30 JST, after kanteilog.com's ~07:00 JST data update) and commits+pushes the new question file straight to `main` if one was added.
 
 ## Architecture
 

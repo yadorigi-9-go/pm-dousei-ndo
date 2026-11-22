@@ -33,7 +33,7 @@ Node.js 22 以上が必要です（Astro 7の要件）。
 
 ## デプロイ・自動化（`.github/workflows/`）
 
-- `deploy.yml`: `master` へのpushごとにビルドしてGitHub Pagesへ自動デプロイ
+- `deploy.yml`: `main` へのpushごとにビルドしてGitHub Pagesへ自動デプロイ
 - `update-daily-question.yml`: 毎日07:30 JSTに前日分の問題データを取得し、あればコミット・push
 
 ## 技術構成
