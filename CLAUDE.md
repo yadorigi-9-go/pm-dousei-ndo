@@ -27,10 +27,12 @@ The site is deployed to GitHub Pages as a project page; `astro.config.mjs` sets 
 
 ### Data integrity rule (important when adding/editing question data)
 
-Question `text` fields must be **original Japanese prose**, never direct quotes from source articles. Only the following *facts/numbers* from the public dataset (GitHub `isamu/sori`, originally sourced from 官邸ログ/kanteilog.com's structured version of Jiji/Nikkei/Asahi prime-minister-movement reports) may be used as the factual basis: `work_min` (public duty minutes), `residence_min` (time at residence), location, and per-category time breakdowns.
+Question `text` fields must be **original Japanese prose**, never direct quotes from source articles. Only *facts/numbers* may be used as the factual basis: `work_min` (public duty minutes), `residence_min` (time at residence), location, and per-category time breakdowns.
 
 - `stay: true` requires `work_min == 0` AND location == 公邸 (official residence) for that date, and by convention its `text` is the fixed phrase `終日、公邸で過ごす。`
 - `stay: false` is any other case (`work_min > 0`, or location other than 公邸).
-- All `date` values must be real historical dates.
+- All `date` values must be real historical dates, and only dates within the current PM's tenure belong in this dataset (see `src/content/questions/README.md`).
+
+**Two data sources, by date range:** GitHub `isamu/sori` structures 官邸ログ/kanteilog.com's version of Jiji/Nikkei/Asahi prime-minister-movement reports into `work_min`/`residence_min`/location facts, but it only covers each PM's first year in office. For dates after that window (for PM Takaichi: after 2026-10-20), there is no `isamu/sori` data — derive the same facts directly from the relevant https://kanteilog.com/day/YYYY-MM-DD page's structured stats instead, never from its prose. `src/pages/index.astro`'s result screen links to that same URL for the question's date.
 
 This rule is also documented in `src/content/questions/README.md` — keep both in sync if it changes.
