@@ -68,6 +68,10 @@ header p.sub {
   text-align: left;
 }
 
+.disclaimer a {
+  color: var(--accent);
+}
+
 .hud {
   display: flex;
   justify-content: space-between;
