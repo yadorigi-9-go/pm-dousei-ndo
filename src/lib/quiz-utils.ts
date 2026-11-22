@@ -27,3 +27,7 @@ export function getYesterdayISO(now: Date = new Date()): string {
 export function calcScore(totalChars: number, revealCount: number): number {
   return Math.max(10, Math.round(100 * (1 - revealCount / totalChars)));
 }
+
+export function formatShareDate(now: Date = new Date()): string {
+  return `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
+}

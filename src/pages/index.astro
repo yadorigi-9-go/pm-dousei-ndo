@@ -73,7 +73,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
 
   <script>
     import type { CollectionEntry } from "astro:content";
-    import { calcScore, formatDate, getYesterdayISO, shuffle } from "../lib/quiz-utils";
+    import { calcScore, formatDate, formatShareDate, getYesterdayISO, shuffle } from "../lib/quiz-utils";
 
     type Question = CollectionEntry<"questions">["data"];
 
@@ -252,7 +252,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
       }
       totalAnswered++;
       const tiles = revealed.map((wasRevealed) => (wasRevealed ? "🏠" : "❔")).join("");
-      answerRows.push(`${tiles} ${correct ? "✅" : "❌"}`);
+      answerRows.push(`${tiles} → ${correct ? "✅" : "❌"}`);
       scoreValEl.textContent = String(score);
 
       btnStay.disabled = true;
@@ -292,7 +292,8 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     }
 
     async function onShareClick(): Promise<void> {
-      const text = `「首相動静 日めくりクイズ」\n${answerRows.join("\n")}\n正解数 ${correctCount} / ${totalAnswered}、スコア ${score} 点でした！\n${location.href}`;
+      const dateLabel = formatShareDate();
+      const text = `${dateLabel}\n\n${answerRows.join("\n")}\n${totalAnswered}問中${correctCount}問正解。スコア${score}点でした！\n\n#首相動静\n\n${location.href}`;
       if (navigator.share) {
         try {
           await navigator.share({ text });
