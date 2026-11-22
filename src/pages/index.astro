@@ -1,0 +1,220 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="動静めくりクイズ">
+  <div class="app">
+    <header>
+      <h1>動静めくりクイズ</h1>
+      <p class="sub">
+        一文字ずつめくって、「終日、公邸で過ごす。」だけで終わる日かどうかを当てよう
+      </p>
+    </header>
+
+    <div class="disclaimer">
+      ※ 各問の日付は実在の日付です。「終日、公邸で過ごしたか」「場所」「分類ごとの活動時間」といった数値・事実は、歴代首相動静を構造化して公開しているGitHubリポジトリ
+      isamu/sori（出典: 官邸ログ／kanteilog.com が時事通信社・日本経済新聞社・朝日新聞社の首相動静を数値化したもの）を参照しています。個々の記事本文やラベルの原文は引用せず、文章はこの数値・事実のみを根拠にすべてオリジナルで書き下ろしています。
+    </div>
+
+    <div id="quizView">
+      <div class="hud">
+        <span>問 <strong id="qIndex">1</strong> / <span id="qTotal">0</span></span>
+        <span>SCORE <strong id="scoreVal">0</strong></span>
+      </div>
+
+      <div class="card">
+        <div class="seal" id="dateSeal">動静速報・要確認</div>
+        <div class="tiles" id="tiles"></div>
+        <div class="reveal-count" id="revealCount">めくった文字: 0 / 0</div>
+
+        <div class="guess-row" id="guessRow">
+          <button class="guess-btn stay" id="btnStay">「終日、公邸で過ごす。」で終わる日</button>
+          <button class="guess-btn out" id="btnOut">それ以外（動きがあった日）</button>
+        </div>
+
+        <div class="result" id="result">
+          <div class="result-head" id="resultHead"></div>
+          <div class="result-text" id="resultText"></div>
+          <div class="result-score" id="resultScore"></div>
+          <button class="next-btn" id="nextBtn">次の問題へ →</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="endView" class="hidden">
+      <div class="card end-card">
+        <h2>結果発表</h2>
+        <div class="end-score" id="endScore">0</div>
+        <div class="end-sub" id="endSub">正解数 0 / 0</div>
+        <button class="replay-btn" id="replayBtn">もう一度プレイ</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { QUESTIONS, type Question } from "../data/questions";
+
+    function formatDate(iso: string): string {
+      const [y, m, d] = iso.split("-");
+      return `${y}年${Number(m)}月${Number(d)}日`;
+    }
+
+    function shuffle<T>(arr: T[]): T[] {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    const qIndexEl = document.getElementById("qIndex")!;
+    const qTotalEl = document.getElementById("qTotal")!;
+    const scoreValEl = document.getElementById("scoreVal")!;
+    const dateSealEl = document.getElementById("dateSeal")!;
+    const tilesEl = document.getElementById("tiles")!;
+    const revealCountEl = document.getElementById("revealCount")!;
+    const guessRowEl = document.getElementById("guessRow")!;
+    const btnStay = document.getElementById("btnStay") as HTMLButtonElement;
+    const btnOut = document.getElementById("btnOut") as HTMLButtonElement;
+    const resultEl = document.getElementById("result")!;
+    const resultHeadEl = document.getElementById("resultHead")!;
+    const resultTextEl = document.getElementById("resultText")!;
+    const resultScoreEl = document.getElementById("resultScore")!;
+    const nextBtn = document.getElementById("nextBtn")!;
+    const quizView = document.getElementById("quizView")!;
+    const endView = document.getElementById("endView")!;
+    const endScoreEl = document.getElementById("endScore")!;
+    const endSubEl = document.getElementById("endSub")!;
+    const replayBtn = document.getElementById("replayBtn")!;
+
+    let deck: Question[] = [];
+    let qPos = 0;
+    let score = 0;
+    let correctCount = 0;
+    let revealed: boolean[] = [];
+    let revealCount = 0;
+    let locked = false;
+    let currentChars: string[] = [];
+
+    function startGame(): void {
+      deck = shuffle(QUESTIONS);
+      qPos = 0;
+      score = 0;
+      correctCount = 0;
+      endView.classList.add("hidden");
+      quizView.classList.remove("hidden");
+      qTotalEl.textContent = String(deck.length);
+      scoreValEl.textContent = String(score);
+      loadQuestion();
+    }
+
+    function loadQuestion(): void {
+      locked = false;
+      const q = deck[qPos];
+      currentChars = Array.from(q.text);
+      revealed = new Array(currentChars.length).fill(false);
+      revealCount = 0;
+
+      qIndexEl.textContent = String(qPos + 1);
+      dateSealEl.textContent = `首相動静 ${formatDate(q.date)}`;
+      resultEl.classList.remove("show", "correct", "wrong");
+      guessRowEl.style.display = "grid";
+      btnStay.disabled = false;
+      btnOut.disabled = false;
+
+      renderTiles();
+      updateRevealCount();
+    }
+
+    function renderTiles(): void {
+      tilesEl.innerHTML = "";
+      currentChars.forEach((ch, i) => {
+        const tile = document.createElement("div");
+        tile.className = "tile" + (revealed[i] ? " revealed" : "");
+        tile.textContent = revealed[i] ? ch : "";
+        if (!revealed[i] && !locked) {
+          tile.addEventListener("click", () => onTileClick(i));
+        }
+        tilesEl.appendChild(tile);
+      });
+    }
+
+    function onTileClick(i: number): void {
+      if (locked || revealed[i]) return;
+      revealed[i] = true;
+      revealCount++;
+      renderTiles();
+      updateRevealCount();
+    }
+
+    function updateRevealCount(): void {
+      revealCountEl.textContent = `めくった文字: ${revealCount} / ${currentChars.length}`;
+    }
+
+    function revealAllAuto(): void {
+      tilesEl.innerHTML = "";
+      currentChars.forEach((ch) => {
+        const tile = document.createElement("div");
+        tile.className = "tile revealed";
+        tile.textContent = ch;
+        tilesEl.appendChild(tile);
+      });
+    }
+
+    function onGuess(guessStay: boolean): void {
+      if (locked) return;
+      locked = true;
+      const q = deck[qPos];
+      const correct = guessStay === q.stay;
+      const n = currentChars.length;
+      const r = revealCount;
+
+      revealAllAuto();
+
+      let pts = 0;
+      if (correct) {
+        pts = Math.max(10, Math.round(100 * (1 - r / n)));
+        score += pts;
+        correctCount++;
+      }
+      scoreValEl.textContent = String(score);
+
+      btnStay.disabled = true;
+      btnOut.disabled = true;
+
+      resultEl.classList.add("show", correct ? "correct" : "wrong");
+      resultHeadEl.textContent = correct ? "〇 正解" : "✕ 不正解";
+      const answerLabel = q.stay
+        ? "「終日、公邸で過ごす。」で終わる日"
+        : "それ以外（動きがあった日）";
+      resultTextEl.textContent = `正解: 「${answerLabel}」　／　全文: ${q.text}`;
+      resultScoreEl.textContent = correct
+        ? `めくった文字数 ${r} / ${n} → +${pts} 点`
+        : `めくった文字数 ${r} / ${n} → 0 点`;
+    }
+
+    function nextQuestion(): void {
+      qPos++;
+      if (qPos >= deck.length) {
+        showEnd();
+      } else {
+        loadQuestion();
+      }
+    }
+
+    function showEnd(): void {
+      quizView.classList.add("hidden");
+      endView.classList.remove("hidden");
+      endScoreEl.textContent = String(score);
+      endSubEl.textContent = `正解数 ${correctCount} / ${deck.length}`;
+    }
+
+    btnStay.addEventListener("click", () => onGuess(true));
+    btnOut.addEventListener("click", () => onGuess(false));
+    nextBtn.addEventListener("click", nextQuestion);
+    replayBtn.addEventListener("click", startGame);
+
+    startGame();
+  </script>
+</Layout>
