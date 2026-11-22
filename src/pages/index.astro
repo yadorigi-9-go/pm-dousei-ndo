@@ -96,13 +96,6 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
       return `${y}-${m}-${day}`;
     }
 
-    function buildDeck(): Question[] {
-      const yesterday = getYesterdayISO();
-      const yesterdayQ = QUESTIONS.find((q) => q.date === yesterday);
-      const rest = QUESTIONS.filter((q) => q.date !== yesterday);
-      return yesterdayQ ? [yesterdayQ, ...shuffle(rest)] : shuffle(QUESTIONS);
-    }
-
     const qIndexEl = document.getElementById("qIndex")!;
     const qTotalEl = document.getElementById("qTotal")!;
     const scoreValEl = document.getElementById("scoreVal")!;
@@ -124,24 +117,51 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     const replayBtn = document.getElementById("replayBtn")!;
 
     let deck: Question[] = [];
+    let restQuestions: Question[] = [];
+    let mode: "daily" | "practice" = "daily";
     let qPos = 0;
     let score = 0;
     let correctCount = 0;
+    let totalAnswered = 0;
     let revealed: boolean[] = [];
     let revealCount = 0;
     let locked = false;
     let currentChars: string[] = [];
 
     function startGame(): void {
-      deck = buildDeck();
+      const yesterday = getYesterdayISO();
+      const dailyQ = QUESTIONS.find((q) => q.date === yesterday);
+      restQuestions = QUESTIONS.filter((q) => q.date !== yesterday);
+
+      if (dailyQ) {
+        mode = "daily";
+        deck = [dailyQ];
+      } else {
+        mode = "practice";
+        deck = shuffle(QUESTIONS);
+      }
+
       qPos = 0;
       score = 0;
       correctCount = 0;
+      totalAnswered = 0;
       endView.classList.add("hidden");
       quizView.classList.remove("hidden");
       qTotalEl.textContent = String(deck.length);
       scoreValEl.textContent = String(score);
       loadQuestion();
+    }
+
+    function startPractice(): void {
+      mode = "practice";
+      deck = shuffle(restQuestions);
+      qPos = 0;
+      qTotalEl.textContent = String(deck.length);
+      loadQuestion();
+    }
+
+    function hasMoreToOffer(): boolean {
+      return mode === "daily" && qPos === deck.length - 1 && restQuestions.length > 0;
     }
 
     function loadQuestion(): void {
@@ -213,6 +233,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
         score += pts;
         correctCount++;
       }
+      totalAnswered++;
       scoreValEl.textContent = String(score);
 
       btnStay.disabled = true;
@@ -225,9 +246,14 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
       resultScoreEl.textContent = correct
         ? `めくった文字数 ${r} / ${n} → +${pts} 点`
         : `めくった文字数 ${r} / ${n} → 0 点`;
+      nextBtn.textContent = hasMoreToOffer() ? "もっと解く" : "次の問題へ →";
     }
 
-    function nextQuestion(): void {
+    function onNextClick(): void {
+      if (hasMoreToOffer()) {
+        startPractice();
+        return;
+      }
       qPos++;
       if (qPos >= deck.length) {
         showEnd();
@@ -240,12 +266,12 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
       quizView.classList.add("hidden");
       endView.classList.remove("hidden");
       endScoreEl.textContent = String(score);
-      endSubEl.textContent = `正解数 ${correctCount} / ${deck.length}`;
+      endSubEl.textContent = `正解数 ${correctCount} / ${totalAnswered}`;
     }
 
     btnStay.addEventListener("click", () => onGuess(true));
     btnOut.addEventListener("click", () => onGuess(false));
-    nextBtn.addEventListener("click", nextQuestion);
+    nextBtn.addEventListener("click", onNextClick);
     replayBtn.addEventListener("click", startGame);
 
     startGame();
