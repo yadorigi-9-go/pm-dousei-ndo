@@ -30,9 +30,11 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
         <div class="tiles" id="tiles"></div>
         <div class="reveal-count" id="revealCount">めくった文字: 0 / 0</div>
 
+        <div class="question-label" id="questionLabel">Q. 終日、公邸で？</div>
+
         <div class="guess-row" id="guessRow">
-          <button class="guess-btn stay" id="btnStay">「終日、公邸で過ごす。」で終わる日</button>
-          <button class="guess-btn out" id="btnOut">それ以外（動きがあった日）</button>
+          <button class="guess-btn stay" id="btnStay">過ごす</button>
+          <button class="guess-btn out" id="btnOut">過ごしてない</button>
         </div>
 
         <div class="result" id="result">
@@ -85,6 +87,22 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
       return a;
     }
 
+    function getYesterdayISO(): string {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function buildDeck(): Question[] {
+      const yesterday = getYesterdayISO();
+      const yesterdayQ = QUESTIONS.find((q) => q.date === yesterday);
+      const rest = QUESTIONS.filter((q) => q.date !== yesterday);
+      return yesterdayQ ? [yesterdayQ, ...shuffle(rest)] : shuffle(QUESTIONS);
+    }
+
     const qIndexEl = document.getElementById("qIndex")!;
     const qTotalEl = document.getElementById("qTotal")!;
     const scoreValEl = document.getElementById("scoreVal")!;
@@ -115,7 +133,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     let currentChars: string[] = [];
 
     function startGame(): void {
-      deck = shuffle(QUESTIONS);
+      deck = buildDeck();
       qPos = 0;
       score = 0;
       correctCount = 0;
@@ -202,9 +220,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
 
       resultEl.classList.add("show", correct ? "correct" : "wrong");
       resultHeadEl.textContent = correct ? "〇 正解" : "✕ 不正解";
-      const answerLabel = q.stay
-        ? "「終日、公邸で過ごす。」で終わる日"
-        : "それ以外（動きがあった日）";
+      const answerLabel = q.stay ? "過ごす" : "過ごしてない";
       resultTextEl.textContent = `正解: 「${answerLabel}」　／　全文: ${q.text}`;
       resultScoreEl.textContent = correct
         ? `めくった文字数 ${r} / ${n} → +${pts} 点`

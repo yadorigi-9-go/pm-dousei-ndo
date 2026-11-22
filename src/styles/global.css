@@ -145,6 +145,12 @@ header p.sub {
   margin-bottom: 18px;
 }
 
+.question-label {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
 .guess-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
