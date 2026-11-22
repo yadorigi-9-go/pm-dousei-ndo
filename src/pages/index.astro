@@ -5,7 +5,10 @@ import Layout from "../layouts/Layout.astro";
 const questions = (await getCollection("questions")).map((entry) => entry.data);
 ---
 
-<Layout title="動静めくりクイズ">
+<Layout
+  title="動静めくりクイズ"
+  description="一文字ずつめくって、「終日、公邸で過ごす。」だけで終わる日かどうかを当てるクイズ。実在の首相動静データをもとにしたオリジナルの問題で遊べます。"
+>
   <div class="app">
     <header>
       <h1>動静めくりクイズ</h1>
@@ -26,7 +29,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
 
       <div class="card">
         <div class="seal" id="dateSeal">動静速報・要確認</div>
-        <div class="tiles" id="tiles"></div>
+        <div class="tiles" id="tiles" role="group" aria-label="動静の文章タイル"></div>
         <div class="reveal-count" id="revealCount">めくった文字: 0 / 0</div>
 
         <div class="question-label" id="questionLabel">Q. 終日、公邸で？</div>
@@ -198,8 +201,23 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
         const tile = document.createElement("div");
         tile.className = "tile" + (revealed[i] ? " revealed" : "");
         tile.textContent = revealed[i] ? ch : "";
+        tile.setAttribute("role", "button");
+        tile.setAttribute(
+          "aria-label",
+          revealed[i] ? `${i + 1}文字目: ${ch}` : `${i + 1}文字目をめくる`,
+        );
         if (!revealed[i] && !locked) {
+          tile.tabIndex = 0;
           tile.addEventListener("click", () => onTileClick(i));
+          tile.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onTileClick(i);
+            }
+          });
+        } else {
+          tile.tabIndex = -1;
+          tile.setAttribute("aria-disabled", "true");
         }
         tilesEl.appendChild(tile);
       });
