@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   update:
@@ -23,11 +24,18 @@ jobs:
         id: fetch
         run: node scripts/update-daily-question.mjs
 
-      - name: Commit and push if a question was added
+      - name: Commit, open PR, and merge if a question was added
         if: steps.fetch.outputs.wrote == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          DATE="${{ steps.fetch.outputs.date }}"
+          BRANCH="auto/question-${DATE}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
           git add src/content/questions
-          git commit -m "chore: add question for ${{ steps.fetch.outputs.date }}"
-          git push
+          git commit -m "chore: add question for ${DATE}"
+          git push origin "$BRANCH"
+          gh pr create --title "chore: add question for ${DATE}" --body "scripts/update-daily-question.mjs による自動追加" --base main --head "$BRANCH"
+          gh pr merge "$BRANCH" --squash --delete-branch
