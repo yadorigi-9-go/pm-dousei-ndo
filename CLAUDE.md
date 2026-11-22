@@ -12,11 +12,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev       # astro dev — local dev server
 npm run build     # astro build — type-checks via astro sync + outputs static site to dist/
 npm run preview   # astro preview — serve the built dist/ locally
+node scripts/update-daily-question.mjs [YYYY-MM-DD]  # fetch+add one day's question from kanteilog.com (defaults to yesterday, JST); no-ops if the file already exists or the page isn't published yet
 ```
 
 There is no test suite and no lint command configured. Type checking happens as part of `astro build` (and via `@astrojs/check`, which astro build runs internally); there is no separate `tsc`/`astro check` script defined, so run `npx astro check` directly if you need type checking without a full build.
 
 The site is deployed to GitHub Pages as a project page; `astro.config.mjs` sets `site`/`base` accordingly (`base: "/pm-dousei-ndo"`). If the repo is ever renamed, `base` must be updated to match.
+
+## CI (`.github/workflows/`)
+
+- `deploy.yml`: builds and deploys to GitHub Pages on every push to `master` (requires the repo's Pages source set to "GitHub Actions" in its settings — a one-time manual step, not something this workflow can do itself).
+- `update-daily-question.yml`: runs `scripts/update-daily-question.mjs` daily (01:30 JST) and commits+pushes the new question file straight to `master` if one was added.
 
 ## Architecture
 
@@ -34,5 +40,7 @@ Question `text` fields must be **original Japanese prose**, never direct quotes 
 - All `date` values must be real historical dates, and only dates within the current PM's tenure belong in this dataset (see `src/content/questions/README.md`).
 
 **Two data sources, by date range:** GitHub `isamu/sori` structures 官邸ログ/kanteilog.com's version of Jiji/Nikkei/Asahi prime-minister-movement reports into `work_min`/`residence_min`/location facts, but it only covers each PM's first year in office. For dates after that window (for PM Takaichi: after 2026-10-20), there is no `isamu/sori` data — derive the same facts directly from the relevant https://kanteilog.com/day/YYYY-MM-DD page's structured stats instead, never from its prose. `src/pages/index.astro`'s result screen links to that same URL for the question's date.
+
+For dates in the kanteilog.com era, `scripts/update-daily-question.mjs` automates this: it extracts the page's embedded `segments` array (`startTime`/`endTime`/`category`/`location` — never the page's own per-segment `description` string, which reads like a close paraphrase of the source news column) and generates `text` from a fixed category→phrase template. That output is intentionally more mechanical than the hand-written entries; keep the parsing/template logic in sync with this rule if kanteilog.com's markup changes.
 
 This rule is also documented in `src/content/questions/README.md` — keep both in sync if it changes.
