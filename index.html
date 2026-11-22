@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>動静めくりクイズ</title>
+<style>
+  :root {
+    --bg: #0f1724;
+    --bg-soft: #16233a;
+    --panel: #1c2b47;
+    --panel-light: #24375a;
+    --accent: #d4af6a;
+    --accent-dim: #8a734a;
+    --text: #eef1f6;
+    --text-dim: #9fb0c8;
+    --correct: #4caf7d;
+    --wrong: #d9634f;
+    --tile-hidden: #2a3a5c;
+    --tile-hidden-border: #3c5080;
+    --tile-revealed: #f4ead9;
+    --tile-revealed-text: #14213d;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at top, var(--bg-soft), var(--bg) 70%);
+    color: var(--text);
+    font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px 60px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: 1.7rem;
+    letter-spacing: .12em;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  header p.sub {
+    margin: 6px 0 0;
+    color: var(--text-dim);
+    font-size: .85rem;
+    letter-spacing: .05em;
+  }
+
+  .disclaimer {
+    margin: 14px auto 0;
+    max-width: 560px;
+    font-size: .72rem;
+    line-height: 1.5;
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 8px 12px;
+    text-align: left;
+  }
+
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 20px 4px 10px;
+    font-size: .85rem;
+    color: var(--text-dim);
+  }
+
+  .hud strong {
+    color: var(--accent);
+    font-size: 1rem;
+  }
+
+  .card {
+    background: linear-gradient(160deg, var(--panel), var(--panel-light));
+    border-radius: 18px;
+    padding: 22px 18px 26px;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .seal {
+    display: inline-block;
+    font-size: .68rem;
+    letter-spacing: .15em;
+    color: var(--accent-dim);
+    border: 1px solid var(--accent-dim);
+    border-radius: 999px;
+    padding: 2px 10px;
+    margin-bottom: 14px;
+  }
+
+  .tiles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 4px 0 20px;
+    line-height: 0;
+  }
+
+  .tile {
+    width: 2.1rem;
+    height: 2.4rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease;
+    border: 1px solid var(--tile-hidden-border);
+    background: var(--tile-hidden);
+    color: transparent;
+  }
+
+  .tile:hover:not(.revealed) {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+
+  .tile.revealed {
+    background: var(--tile-revealed);
+    color: var(--tile-revealed-text);
+    cursor: default;
+    transform: none;
+  }
+
+  .tile.auto {
+    background: #3a4a6e;
+    color: var(--text-dim);
+    border-color: #4a5c84;
+  }
+
+  .reveal-count {
+    font-size: .78rem;
+    color: var(--text-dim);
+    margin-bottom: 18px;
+  }
+
+  .guess-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .guess-btn {
+    padding: 14px 8px;
+    border-radius: 12px;
+    border: none;
+    font-size: .95rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    cursor: pointer;
+    transition: transform .12s ease, filter .12s ease;
+  }
+
+  .guess-btn:active { transform: scale(0.97); }
+
+  .guess-btn.stay {
+    background: linear-gradient(135deg, #5b7fd1, #3f5fae);
+    color: #fff;
+  }
+
+  .guess-btn.out {
+    background: linear-gradient(135deg, #d18a5b, #ae6f3f);
+    color: #fff;
+  }
+
+  .guess-btn:disabled {
+    opacity: .5;
+    cursor: default;
+  }
+
+  .result {
+    margin-top: 18px;
+    border-radius: 14px;
+    padding: 16px;
+    display: none;
+  }
+
+  .result.show { display: block; }
+
+  .result.correct { background: rgba(76,175,125,0.12); border: 1px solid rgba(76,175,125,0.4); }
+  .result.wrong { background: rgba(217,99,79,0.12); border: 1px solid rgba(217,99,79,0.4); }
+
+  .result-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .result.correct .result-head { color: var(--correct); }
+  .result.wrong .result-head { color: var(--wrong); }
+
+  .result-text {
+    font-size: .88rem;
+    color: var(--text);
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+
+  .result-score {
+    font-size: .82rem;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+  }
+
+  .next-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: #1a1304;
+    font-weight: 700;
+    font-size: .9rem;
+    cursor: pointer;
+  }
+
+  .end-card {
+    text-align: center;
+    padding: 36px 18px;
+  }
+
+  .end-card h2 {
+    color: var(--accent);
+    margin: 0 0 4px;
+  }
+
+  .end-score {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: var(--text);
+    margin: 10px 0 4px;
+  }
+
+  .end-sub {
+    color: var(--text-dim);
+    font-size: .85rem;
+    margin-bottom: 24px;
+  }
+
+  .replay-btn {
+    padding: 12px 26px;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: #1a1304;
+    font-weight: 700;
+    font-size: .95rem;
+    cursor: pointer;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>動静めくりクイズ</h1>
+    <p class="sub">一文字ずつめくって、「公邸で終日過ごした日」かどうかを当てよう</p>
+  </header>
+
+  <div class="disclaimer">
+    ※ この中の文章はすべてフィクションです。実際の首相動静記事（時事通信・NHK・各紙等）からの引用ではなく、それらの報道で使われる文体・形式を参考にして作成したオリジナルの例文です。
+  </div>
+
+  <div id="quizView">
+    <div class="hud">
+      <span>問 <strong id="qIndex">1</strong> / <span id="qTotal">32</span></span>
+      <span>SCORE <strong id="scoreVal">0</strong></span>
+    </div>
+
+    <div class="card">
+      <div class="seal">動静速報・要確認</div>
+      <div class="tiles" id="tiles"></div>
+      <div class="reveal-count" id="revealCount">めくった文字: 0 / 0</div>
+
+      <div class="guess-row" id="guessRow">
+        <button class="guess-btn stay" id="btnStay">終日 公邸で過ごした</button>
+        <button class="guess-btn out" id="btnOut">公邸にいなかった</button>
+      </div>
+
+      <div class="result" id="result">
+        <div class="result-head" id="resultHead"></div>
+        <div class="result-text" id="resultText"></div>
+        <div class="result-score" id="resultScore"></div>
+        <button class="next-btn" id="nextBtn">次の問題へ →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="endView" class="hidden">
+    <div class="card end-card">
+      <h2>結果発表</h2>
+      <div class="end-score" id="endScore">0</div>
+      <div class="end-sub" id="endSub">正解数 0 / 0</div>
+      <button class="replay-btn" id="replayBtn">もう一度プレイ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // true = answer is "終日、公邸で過ごした"。false = そうでない（外出・面会・出張・外遊・私邸等）
+  const DATA = [
+    { text: "終日、公邸で過ごす。", stay: true },
+    { text: "一日中、公邸にて静養。来客なし。", stay: true },
+    { text: "終日、公邸で執務。面会予定なし。", stay: true },
+    { text: "朝から夜まで公邸に滞在。外出せず。", stay: true },
+    { text: "終日、公邸で過ごす。電話対応のみ。", stay: true },
+    { text: "公邸にて終日過ごす。新聞各紙に目を通す。", stay: true },
+    { text: "終日在邸。夕刻、秘書官と短時間打ち合わせ。", stay: true },
+    { text: "休日のため終日、公邸で過ごす。", stay: true },
+    { text: "終日公邸。体調管理のため予定を調整。", stay: true },
+    { text: "終日、公邸で過ごす。夜は早めに就寝。", stay: true },
+    { text: "公邸で終日を過ごす。来客の予定は入れず。", stay: true },
+    { text: "終日、公邸にて書類に目を通す。", stay: true },
+    { text: "午前、午後とも公邸で過ごす。外出なし。", stay: true },
+    { text: "終日、公邸で過ごす。夕食は公邸でとる。", stay: true },
+    { text: "終日、公邸滞在。体調不良のため静養。", stay: true },
+    { text: "終日公邸で過ごす。会見の予定は入れず。", stay: true },
+
+    { text: "09:50 徒歩で公邸発 09:55 官邸着。各省庁幹部と打ち合わせ。", stay: false },
+    { text: "終日、私邸で過ごす。公邸には戻らず。", stay: false },
+    { text: "07:40 公邸発 08:10 羽田空港着。地方視察のため出発。", stay: false },
+    { text: "10:00 官邸着。経済団体代表と面会。昼食は外部で。", stay: false },
+    { text: "終日外遊中。現地時間で首脳会談に出席。", stay: false },
+    { text: "08:30 公邸発 09:00 国会着。衆院予算委員会に出席。", stay: false },
+    { text: "19:00 公邸発 19:30 都内ホテル着。経済界との懇談会に出席。", stay: false },
+    { text: "終日入院中の病院に滞在。公邸には戻らず。", stay: false },
+    { text: "09:00 官邸発 各党幹部と党本部で会談。", stay: false },
+    { text: "終日、地方出張。視察先のホテルに宿泊。", stay: false },
+    { text: "18:00 公邸発 知人と都内で会食。帰邸は深夜。", stay: false },
+    { text: "09:10 公邸発 皇居にて認証式に出席。", stay: false },
+    { text: "終日、議員宿舎で過ごす。公邸には立ち寄らず。", stay: false },
+    { text: "07:00 公邸発 成田空港発。外国訪問のため出発。", stay: false },
+    { text: "09:40 官邸着。閣議に出席後、各国大使と面会。", stay: false },
+    { text: "終日、地元の選挙区に帰省。公邸を離れる。", stay: false },
+  ];
+
+  let deck = [];
+  let qPos = 0;
+  let score = 0;
+  let correctCount = 0;
+  let revealed = [];
+  let revealCount = 0;
+  let locked = false;
+  let currentChars = [];
+
+  const qIndexEl = document.getElementById("qIndex");
+  const qTotalEl = document.getElementById("qTotal");
+  const scoreValEl = document.getElementById("scoreVal");
+  const tilesEl = document.getElementById("tiles");
+  const revealCountEl = document.getElementById("revealCount");
+  const btnStay = document.getElementById("btnStay");
+  const btnOut = document.getElementById("btnOut");
+  const resultEl = document.getElementById("result");
+  const resultHeadEl = document.getElementById("resultHead");
+  const resultTextEl = document.getElementById("resultText");
+  const resultScoreEl = document.getElementById("resultScore");
+  const nextBtn = document.getElementById("nextBtn");
+  const quizView = document.getElementById("quizView");
+  const endView = document.getElementById("endView");
+  const endScoreEl = document.getElementById("endScore");
+  const endSubEl = document.getElementById("endSub");
+  const replayBtn = document.getElementById("replayBtn");
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function startGame() {
+    deck = shuffle(DATA);
+    qPos = 0;
+    score = 0;
+    correctCount = 0;
+    endView.classList.add("hidden");
+    quizView.classList.remove("hidden");
+    qTotalEl.textContent = deck.length;
+    scoreValEl.textContent = score;
+    loadQuestion();
+  }
+
+  function loadQuestion() {
+    locked = false;
+    const q = deck[qPos];
+    currentChars = Array.from(q.text);
+    revealed = new Array(currentChars.length).fill(false);
+    revealCount = 0;
+
+    qIndexEl.textContent = qPos + 1;
+    resultEl.classList.remove("show", "correct", "wrong");
+    document.getElementById("guessRow").style.display = "grid";
+    btnStay.disabled = false;
+    btnOut.disabled = false;
+
+    renderTiles();
+    updateRevealCount();
+  }
+
+  function renderTiles() {
+    tilesEl.innerHTML = "";
+    currentChars.forEach((ch, i) => {
+      const tile = document.createElement("div");
+      tile.className = "tile" + (revealed[i] ? " revealed" : "");
+      tile.textContent = revealed[i] ? ch : "";
+      if (!revealed[i] && !locked) {
+        tile.addEventListener("click", () => onTileClick(i));
+      }
+      tilesEl.appendChild(tile);
+    });
+  }
+
+  function onTileClick(i) {
+    if (locked || revealed[i]) return;
+    revealed[i] = true;
+    revealCount++;
+    renderTiles();
+    updateRevealCount();
+  }
+
+  function updateRevealCount() {
+    revealCountEl.textContent = "めくった文字: " + revealCount + " / " + currentChars.length;
+  }
+
+  function revealAllAuto() {
+    currentChars.forEach((ch, i) => {
+      if (!revealed[i]) revealed[i] = true;
+    });
+    tilesEl.innerHTML = "";
+    currentChars.forEach((ch) => {
+      const tile = document.createElement("div");
+      tile.className = "tile revealed";
+      tile.textContent = ch;
+      tilesEl.appendChild(tile);
+    });
+  }
+
+  function onGuess(guessStay) {
+    if (locked) return;
+    locked = true;
+    const q = deck[qPos];
+    const correct = guessStay === q.stay;
+    const n = currentChars.length;
+    const r = revealCount;
+
+    revealAllAuto();
+
+    let pts = 0;
+    if (correct) {
+      pts = Math.max(10, Math.round(100 * (1 - r / n)));
+      score += pts;
+      correctCount++;
+    }
+    scoreValEl.textContent = score;
+
+    btnStay.disabled = true;
+    btnOut.disabled = true;
+
+    resultEl.classList.add("show", correct ? "correct" : "wrong");
+    resultHeadEl.textContent = correct ? "〇 正解" : "✕ 不正解";
+    const answerLabel = q.stay ? "終日、公邸で過ごした" : "公邸にいなかった（外出・面会・出張など）";
+    resultTextEl.textContent = "正解: 「" + answerLabel + "」　／　全文: " + q.text;
+    resultScoreEl.textContent = correct
+      ? ("めくった文字数 " + r + " / " + n + " → +" + pts + " 点")
+      : ("めくった文字数 " + r + " / " + n + " → 0 点");
+  }
+
+  function nextQuestion() {
+    qPos++;
+    if (qPos >= deck.length) {
+      showEnd();
+    } else {
+      loadQuestion();
+    }
+  }
+
+  function showEnd() {
+    quizView.classList.add("hidden");
+    endView.classList.remove("hidden");
+    endScoreEl.textContent = score;
+    endSubEl.textContent = "正解数 " + correctCount + " / " + deck.length;
+  }
+
+  btnStay.addEventListener("click", () => onGuess(true));
+  btnOut.addEventListener("click", () => onGuess(false));
+  nextBtn.addEventListener("click", nextQuestion);
+  replayBtn.addEventListener("click", startGame);
+
+  startGame();
+})();
+</script>
+</body>
+</html>
