@@ -121,6 +121,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     let locked = false;
     let currentChars: string[] = [];
     let answerRows: string[] = [];
+    let tileEls: HTMLElement[] = [];
 
     function startGame(): void {
       const yesterday = getYesterdayISO();
@@ -186,37 +187,50 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
 
     function renderTiles(): void {
       tilesEl.innerHTML = "";
-      currentChars.forEach((ch, i) => {
+      tileEls = currentChars.map((ch, i) => {
         const tile = document.createElement("div");
-        tile.className = "tile" + (revealed[i] ? " revealed" : "");
-        tile.textContent = revealed[i] ? ch : "";
+        tile.className = "tile";
         tile.setAttribute("role", "button");
-        tile.setAttribute(
-          "aria-label",
-          revealed[i] ? `${i + 1}文字目: ${ch}` : `${i + 1}文字目をめくる`,
-        );
-        if (!revealed[i] && !locked) {
-          tile.tabIndex = 0;
-          tile.addEventListener("click", () => onTileClick(i));
-          tile.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              onTileClick(i);
-            }
-          });
-        } else {
-          tile.tabIndex = -1;
-          tile.setAttribute("aria-disabled", "true");
-        }
+        tile.setAttribute("aria-label", `${i + 1}文字目をめくる`);
+        tile.tabIndex = 0;
+
+        const inner = document.createElement("div");
+        inner.className = "tile-inner";
+        const front = document.createElement("div");
+        front.className = "tile-face tile-front";
+        const back = document.createElement("div");
+        back.className = "tile-face tile-back";
+        back.textContent = ch;
+        inner.append(front, back);
+        tile.appendChild(inner);
+
+        tile.addEventListener("click", () => onTileClick(i));
+        tile.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onTileClick(i);
+          }
+        });
+
         tilesEl.appendChild(tile);
+        return tile;
       });
+    }
+
+    function flipTile(i: number): void {
+      const tile = tileEls[i];
+      if (!tile || tile.classList.contains("revealed")) return;
+      tile.classList.add("revealed");
+      tile.tabIndex = -1;
+      tile.setAttribute("aria-disabled", "true");
+      tile.setAttribute("aria-label", `${i + 1}文字目: ${currentChars[i]}`);
     }
 
     function onTileClick(i: number): void {
       if (locked || revealed[i]) return;
       revealed[i] = true;
       revealCount++;
-      renderTiles();
+      flipTile(i);
       updateRevealCount();
     }
 
@@ -225,12 +239,8 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     }
 
     function revealAllAuto(): void {
-      tilesEl.innerHTML = "";
-      currentChars.forEach((ch) => {
-        const tile = document.createElement("div");
-        tile.className = "tile revealed";
-        tile.textContent = ch;
-        tilesEl.appendChild(tile);
+      currentChars.forEach((_, i) => {
+        if (!revealed[i]) flipTile(i);
       });
     }
 
