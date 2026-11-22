@@ -72,6 +72,19 @@ header p.sub {
   color: var(--accent);
 }
 
+.daily-notice {
+  margin: 10px auto 0;
+  max-width: 560px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--accent);
+  background: rgba(156, 107, 35, 0.1);
+  border: 1px solid var(--accent-dim);
+  border-radius: 8px;
+  padding: 8px 12px;
+  text-align: left;
+}
+
 #quizView,
 #endView {
   margin-top: 20px;

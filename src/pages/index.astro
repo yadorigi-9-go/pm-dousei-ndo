@@ -21,6 +21,10 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
       ※ 数値・事実（<a href="https://github.com/isamu/sori" target="_blank" rel="noopener noreferrer">GitHub: isamu/sori</a>、および<a href="https://kanteilog.com/" target="_blank" rel="noopener noreferrer">官邸ログ</a>）に基づくAIの要約を記載しています。記事本文からの引用は行っていません。
     </div>
 
+    <div class="daily-notice hidden" id="dailyNotice" role="status">
+      本日はまだ通常モードの問題が配信されていません。ランダムな練習問題でプレイします。
+    </div>
+
     <div id="quizView">
       <div class="hud">
         <span>問 <strong id="qIndex">1</strong> / <span id="qTotal">0</span></span>
@@ -39,7 +43,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
           <button class="guess-btn out" id="btnOut">過ごしてない</button>
         </div>
 
-        <div class="result" id="result">
+        <div class="result" id="result" aria-live="polite">
           <div class="result-head" id="resultHead"></div>
           <div class="result-text" id="resultText"></div>
           <div class="result-score" id="resultScore"></div>
@@ -66,6 +70,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
 
   <script>
     import type { CollectionEntry } from "astro:content";
+    import { calcScore, formatDate, getYesterdayISO, shuffle } from "../lib/quiz-utils";
 
     type Question = CollectionEntry<"questions">["data"];
 
@@ -77,32 +82,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
 
     const QUESTIONS = window.__QUESTIONS__;
 
-    const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
-
-    function formatDate(iso: string): string {
-      const [y, m, d] = iso.split("-").map(Number);
-      const weekday = WEEKDAYS[new Date(y, m - 1, d).getDay()];
-      return `${y}年${m}月${d}日（${weekday}）`;
-    }
-
-    function shuffle<T>(arr: T[]): T[] {
-      const a = arr.slice();
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
-      return a;
-    }
-
-    function getYesterdayISO(): string {
-      const d = new Date();
-      d.setDate(d.getDate() - 1);
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${y}-${m}-${day}`;
-    }
-
+    const dailyNoticeEl = document.getElementById("dailyNotice")!;
     const qIndexEl = document.getElementById("qIndex")!;
     const qTotalEl = document.getElementById("qTotal")!;
     const scoreValEl = document.getElementById("scoreVal")!;
@@ -145,9 +125,11 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
       if (dailyQ) {
         mode = "daily";
         deck = [dailyQ];
+        dailyNoticeEl.classList.add("hidden");
       } else {
         mode = "practice";
         deck = shuffle(QUESTIONS);
+        dailyNoticeEl.classList.remove("hidden");
       }
 
       qPos = 0;
@@ -166,6 +148,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     function startPractice(): void {
       endView.classList.add("hidden");
       quizView.classList.remove("hidden");
+      dailyNoticeEl.classList.add("hidden");
       mode = "practice";
       deck = shuffle(restQuestions).slice(0, PRACTICE_QUESTION_COUNT);
       qPos = 0;
@@ -257,7 +240,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
 
       let pts = 0;
       if (correct) {
-        pts = Math.max(10, Math.round(100 * (1 - r / n)));
+        pts = calcScore(n, r);
         score += pts;
         correctCount++;
       }
