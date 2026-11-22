@@ -120,6 +120,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     let revealCount = 0;
     let locked = false;
     let currentChars: string[] = [];
+    let answerEmojis: string[] = [];
 
     function startGame(): void {
       const yesterday = getYesterdayISO();
@@ -140,6 +141,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
       score = 0;
       correctCount = 0;
       totalAnswered = 0;
+      answerEmojis = [];
       endView.classList.add("hidden");
       quizView.classList.remove("hidden");
       qTotalEl.textContent = String(deck.length);
@@ -249,6 +251,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
         correctCount++;
       }
       totalAnswered++;
+      answerEmojis.push(correct ? "✅" : "❌");
       scoreValEl.textContent = String(score);
 
       btnStay.disabled = true;
@@ -288,7 +291,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     }
 
     async function onShareClick(): Promise<void> {
-      const text = `「首相動静 日めくりクイズ」で正解数 ${correctCount} / ${totalAnswered}、スコア ${score} 点でした！`;
+      const text = `「首相動静 日めくりクイズ」\n${answerEmojis.join("")}\n正解数 ${correctCount} / ${totalAnswered}、スコア ${score} 点でした！`;
       const url = location.href;
       if (navigator.share) {
         try {
