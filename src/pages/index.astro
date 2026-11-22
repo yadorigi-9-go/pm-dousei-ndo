@@ -158,11 +158,13 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
       loadQuestion();
     }
 
+    const PRACTICE_QUESTION_COUNT = 10;
+
     function startPractice(): void {
       endView.classList.add("hidden");
       quizView.classList.remove("hidden");
       mode = "practice";
-      deck = shuffle(restQuestions);
+      deck = shuffle(restQuestions).slice(0, PRACTICE_QUESTION_COUNT);
       qPos = 0;
       qTotalEl.textContent = String(deck.length);
       loadQuestion();
