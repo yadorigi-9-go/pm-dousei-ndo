@@ -58,8 +58,11 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
         <h2>結果発表</h2>
         <div class="end-score" id="endScore">0</div>
         <div class="end-sub" id="endSub">正解数 0 / 0</div>
-        <button class="next-btn hidden" id="endMoreBtn">もっと解く</button>
-        <button class="replay-btn" id="replayBtn">もう一度プレイ</button>
+        <div class="end-actions">
+          <button class="next-btn hidden" id="endMoreBtn">もっと解く</button>
+          <button class="replay-btn" id="replayBtn">もう一度プレイ</button>
+          <button class="share-btn" id="shareBtn">結果をシェア</button>
+        </div>
       </div>
     </div>
   </div>
@@ -104,6 +107,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     const endSubEl = document.getElementById("endSub")!;
     const endMoreBtn = document.getElementById("endMoreBtn")!;
     const replayBtn = document.getElementById("replayBtn")!;
+    const shareBtn = document.getElementById("shareBtn")!;
 
     let deck: Question[] = [];
     let restQuestions: Question[] = [];
@@ -283,11 +287,27 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
       replayBtn.classList.toggle("hidden", offerMore);
     }
 
+    async function onShareClick(): Promise<void> {
+      const text = `「首相動静 日めくりクイズ」で正解数 ${correctCount} / ${totalAnswered}、スコア ${score} 点でした！`;
+      const url = location.href;
+      if (navigator.share) {
+        try {
+          await navigator.share({ text, url });
+        } catch {
+          // ユーザーがキャンセルした場合などはそのまま何もしない
+        }
+        return;
+      }
+      const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+      window.open(intentUrl, "_blank", "noopener,noreferrer");
+    }
+
     btnStay.addEventListener("click", () => onGuess(true));
     btnOut.addEventListener("click", () => onGuess(false));
     nextBtn.addEventListener("click", onNextClick);
     endMoreBtn.addEventListener("click", startPractice);
     replayBtn.addEventListener("click", startGame);
+    shareBtn.addEventListener("click", onShareClick);
 
     startGame();
   </script>
