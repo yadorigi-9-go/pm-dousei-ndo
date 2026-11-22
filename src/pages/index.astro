@@ -40,6 +40,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
           <div class="result-head" id="resultHead"></div>
           <div class="result-text" id="resultText"></div>
           <div class="result-score" id="resultScore"></div>
+          <a class="source-link" id="sourceLink" target="_blank" rel="noopener noreferrer">官邸ログで確認する →</a>
           <button class="next-btn" id="nextBtn">次の問題へ →</button>
         </div>
       </div>
@@ -112,6 +113,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     const resultHeadEl = document.getElementById("resultHead")!;
     const resultTextEl = document.getElementById("resultText")!;
     const resultScoreEl = document.getElementById("resultScore")!;
+    const sourceLinkEl = document.getElementById("sourceLink") as HTMLAnchorElement;
     const nextBtn = document.getElementById("nextBtn")!;
     const quizView = document.getElementById("quizView")!;
     const endView = document.getElementById("endView")!;
@@ -252,6 +254,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
       resultScoreEl.textContent = correct
         ? `めくった文字数 ${r} / ${n} → +${pts} 点`
         : `めくった文字数 ${r} / ${n} → 0 点`;
+      sourceLinkEl.href = `https://kanteilog.com/day/${q.date}`;
       nextBtn.textContent = hasMoreToOffer() ? "結果を見る" : "次の問題へ →";
     }
 
