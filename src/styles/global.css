@@ -13,6 +13,33 @@
   --tile-hidden-border: #b9ac8a;
   --tile-revealed: #2f3b56;
   --tile-revealed-text: #f6f2e8;
+  --overlay-tint: rgba(0, 0, 0, 0.03);
+  --overlay-border: rgba(0, 0, 0, 0.08);
+  --card-shadow-color: rgba(0, 0, 0, 0.1);
+  --card-highlight-color: rgba(255, 255, 255, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1a16;
+    --bg-soft: #242019;
+    --panel: #2a2520;
+    --panel-light: #332c23;
+    --accent: #d9a24b;
+    --accent-dim: #8a6a3d;
+    --text: #f0e9db;
+    --text-dim: #b3a890;
+    --correct: #5fcf93;
+    --wrong: #e2776a;
+    --tile-hidden: #3a3326;
+    --tile-hidden-border: #5c5038;
+    --tile-revealed: #3d4a6b;
+    --tile-revealed-text: #f6f2e8;
+    --overlay-tint: rgba(255, 255, 255, 0.04);
+    --overlay-border: rgba(255, 255, 255, 0.12);
+    --card-shadow-color: rgba(0, 0, 0, 0.4);
+    --card-highlight-color: rgba(255, 255, 255, 0.08);
+  }
 }
 
 * {
@@ -61,8 +88,8 @@ header p.sub {
   font-size: 0.72rem;
   line-height: 1.5;
   color: var(--text-dim);
-  background: rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--overlay-tint);
+  border: 1px solid var(--overlay-border);
   border-radius: 8px;
   padding: 8px 12px;
   text-align: left;
@@ -108,8 +135,8 @@ header p.sub {
   background: linear-gradient(160deg, var(--panel), var(--panel-light));
   border-radius: 18px;
   padding: 22px 18px 26px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 28px var(--card-shadow-color), inset 0 1px 0 var(--card-highlight-color);
+  border: 1px solid var(--overlay-border);
 }
 
 .seal {
