@@ -1,5 +1,8 @@
 ---
+import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
+
+const questions = (await getCollection("questions")).map((entry) => entry.data);
 ---
 
 <Layout title="動静めくりクイズ">
@@ -51,8 +54,22 @@ import Layout from "../layouts/Layout.astro";
     </div>
   </div>
 
+  <script define:vars={{ questions }}>
+    window.__QUESTIONS__ = questions;
+  </script>
+
   <script>
-    import { QUESTIONS, type Question } from "../data/questions";
+    import type { CollectionEntry } from "astro:content";
+
+    type Question = CollectionEntry<"questions">["data"];
+
+    declare global {
+      interface Window {
+        __QUESTIONS__: Question[];
+      }
+    }
+
+    const QUESTIONS = window.__QUESTIONS__;
 
     function formatDate(iso: string): string {
       const [y, m, d] = iso.split("-");
