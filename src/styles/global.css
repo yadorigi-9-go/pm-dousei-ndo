@@ -334,6 +334,23 @@ header p.sub {
   margin-bottom: 24px;
 }
 
+.end-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.share-btn {
+  padding: 12px 26px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-dim);
+  background: transparent;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
 .replay-btn {
   padding: 12px 26px;
   border-radius: 10px;
