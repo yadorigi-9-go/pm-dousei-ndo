@@ -51,6 +51,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
         <h2>結果発表</h2>
         <div class="end-score" id="endScore">0</div>
         <div class="end-sub" id="endSub">正解数 0 / 0</div>
+        <button class="next-btn hidden" id="endMoreBtn">もっと解く</button>
         <button class="replay-btn" id="replayBtn">もう一度プレイ</button>
       </div>
     </div>
@@ -114,6 +115,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     const endView = document.getElementById("endView")!;
     const endScoreEl = document.getElementById("endScore")!;
     const endSubEl = document.getElementById("endSub")!;
+    const endMoreBtn = document.getElementById("endMoreBtn")!;
     const replayBtn = document.getElementById("replayBtn")!;
 
     let deck: Question[] = [];
@@ -153,6 +155,8 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     }
 
     function startPractice(): void {
+      endView.classList.add("hidden");
+      quizView.classList.remove("hidden");
       mode = "practice";
       deck = shuffle(restQuestions);
       qPos = 0;
@@ -246,32 +250,35 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
       resultScoreEl.textContent = correct
         ? `めくった文字数 ${r} / ${n} → +${pts} 点`
         : `めくった文字数 ${r} / ${n} → 0 点`;
-      nextBtn.textContent = hasMoreToOffer() ? "もっと解く" : "次の問題へ →";
+      nextBtn.textContent = hasMoreToOffer() ? "結果を見る" : "次の問題へ →";
     }
 
     function onNextClick(): void {
       if (hasMoreToOffer()) {
-        startPractice();
+        showResult(true);
         return;
       }
       qPos++;
       if (qPos >= deck.length) {
-        showEnd();
+        showResult(false);
       } else {
         loadQuestion();
       }
     }
 
-    function showEnd(): void {
+    function showResult(offerMore: boolean): void {
       quizView.classList.add("hidden");
       endView.classList.remove("hidden");
       endScoreEl.textContent = String(score);
       endSubEl.textContent = `正解数 ${correctCount} / ${totalAnswered}`;
+      endMoreBtn.classList.toggle("hidden", !offerMore);
+      replayBtn.classList.toggle("hidden", offerMore);
     }
 
     btnStay.addEventListener("click", () => onGuess(true));
     btnOut.addEventListener("click", () => onGuess(false));
     nextBtn.addEventListener("click", onNextClick);
+    endMoreBtn.addEventListener("click", startPractice);
     replayBtn.addEventListener("click", startGame);
 
     startGame();
