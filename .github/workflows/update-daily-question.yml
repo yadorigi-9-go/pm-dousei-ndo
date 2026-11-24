@@ -9,6 +9,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 jobs:
   update:
@@ -40,3 +41,6 @@ jobs:
           git push --force origin "$BRANCH"
           gh pr create --title "chore: add question for ${DATE}" --body "scripts/update-daily-question.mjs による自動追加" --base main --head "$BRANCH"
           gh pr merge "$BRANCH" --squash --delete-branch
+          # Merges made with GITHUB_TOKEN don't trigger push workflows,
+          # so start the deploy explicitly (workflow_dispatch is exempt).
+          gh workflow run deploy.yml --ref main
