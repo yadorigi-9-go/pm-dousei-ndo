@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calcScore, formatDate, formatShareDate, getYesterdayISO, shuffle } from "./quiz-utils";
+import { calcScore, formatDate, formatShareDate, getYesterdayISO, pickDailyQuestion, shuffle } from "./quiz-utils";
 
 describe("formatDate", () => {
   it("formats an ISO date with the correct Japanese weekday", () => {
@@ -52,5 +52,26 @@ describe("calcScore", () => {
   it("never drops below the 10-point floor", () => {
     expect(calcScore(100, 95)).toBe(10);
     expect(calcScore(100, 99)).toBe(10);
+  });
+});
+
+describe("pickDailyQuestion", () => {
+  const qs = [{ date: "2026-11-21" }, { date: "2026-11-23" }, { date: "2026-11-22" }];
+
+  it("returns yesterday's question when present", () => {
+    expect(pickDailyQuestion(qs, "2026-11-22")).toEqual({ date: "2026-11-22" });
+  });
+
+  it("falls back to the latest earlier question when yesterday's is missing", () => {
+    expect(pickDailyQuestion(qs, "2026-11-24")).toEqual({ date: "2026-11-23" });
+  });
+
+  it("ignores questions dated after yesterday", () => {
+    expect(pickDailyQuestion(qs, "2026-11-21")).toEqual({ date: "2026-11-21" });
+  });
+
+  it("returns undefined when nothing is on or before yesterday", () => {
+    expect(pickDailyQuestion(qs, "2026-11-20")).toBeUndefined();
+    expect(pickDailyQuestion([], "2026-11-24")).toBeUndefined();
   });
 });

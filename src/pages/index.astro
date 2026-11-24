@@ -99,7 +99,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
 
   <script>
     import type { CollectionEntry } from "astro:content";
-    import { calcScore, formatDate, formatShareDate, getYesterdayISO, shuffle } from "../lib/quiz-utils";
+    import { calcScore, formatDate, formatShareDate, getYesterdayISO, pickDailyQuestion, shuffle } from "../lib/quiz-utils";
 
     type Question = CollectionEntry<"questions">["data"];
 
@@ -151,8 +151,8 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
 
     function startGame(): void {
       const yesterday = getYesterdayISO();
-      const dailyQ = QUESTIONS.find((q) => q.date === yesterday);
-      restQuestions = QUESTIONS.filter((q) => q.date !== yesterday);
+      const dailyQ = pickDailyQuestion(QUESTIONS, yesterday);
+      restQuestions = QUESTIONS.filter((q) => q !== dailyQ);
 
       if (dailyQ) {
         mode = "daily";
