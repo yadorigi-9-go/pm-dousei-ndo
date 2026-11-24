@@ -24,6 +24,22 @@ export function getYesterdayISO(now: Date = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
+/**
+ * Pick the "daily" question: yesterday's if present, otherwise the most recent
+ * one dated on or before yesterday (yesterday's data is only collected the
+ * following morning). Returns undefined if there is no such question.
+ */
+export function pickDailyQuestion<T extends { date: string }>(
+  questions: T[],
+  yesterday: string,
+): T | undefined {
+  let best: T | undefined;
+  for (const q of questions) {
+    if (q.date <= yesterday && (!best || q.date > best.date)) best = q;
+  }
+  return best;
+}
+
 export function calcScore(totalChars: number, revealCount: number): number {
   return Math.max(10, Math.round(100 * (1 - revealCount / totalChars)));
 }
