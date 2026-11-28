@@ -1,7 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { buildQuestion, extractMainSegments, parseTimeToMinutes, yesterdayInJst } from "./daily-question.mjs";
+import {
+  CATEGORY_PHRASE,
+  STAY_TEXT as EXPORTED_STAY_TEXT,
+  TEXT_VARIANTS,
+  buildQuestion,
+  dateHash,
+  extractMainSegments,
+  parseTimeToMinutes,
+  pickVariant,
+  yesterdayInJst,
+} from "./daily-question.mjs";
 
+// Hard-coded on purpose: the README fixes this exact string for stay:true.
 const STAY_TEXT = "終日、公邸で過ごす。";
+
+// All texts a variant group can render for the given facts.
+const textsFor = (group, args) => TEXT_VARIANTS[group].map((fill) => fill(args));
 
 const seg = (startTime, endTime, category, location) => ({ startTime, endTime, category, location });
 
@@ -55,16 +69,17 @@ describe("buildQuestion", () => {
 
   it("marks a full day at another residence as stay:false and names the place", () => {
     const q = buildQuestion(D, [seg("00:00", "24:00", "residence", "衆院議員宿舎")]);
-    expect(q).toEqual({ date: D, text: "終日、衆院議員宿舎で過ごす。公邸には立ち寄らず。", stay: false });
+    expect(q.stay).toBe(false);
+    expect(textsFor("fullDayElsewhere", { place: "衆院議員宿舎" })).toContain(q.text);
   });
 
   it("falls back to a generic place name when the full-day location is missing", () => {
     const q = buildQuestion(D, [seg("00:00", "24:00", "residence", "")]);
-    expect(q.text).toBe("終日、別の場所で過ごす。公邸には立ち寄らず。");
+    expect(textsFor("fullDayElsewhere", { place: "別の場所" })).toContain(q.text);
     expect(q.stay).toBe(false);
   });
 
-  it("describes a short (≤3h) outing as 短時間 with the dominant category", () => {
+  it("describes a short (≤3h) outing with the dominant category", () => {
     const q = buildQuestion(D, [
       seg("00:00", "10:00", "residence", "公邸"),
       seg("10:00", "10:30", "travel", ""),
@@ -72,13 +87,14 @@ describe("buildQuestion", () => {
       seg("12:30", "13:00", "travel", ""),
       seg("13:00", "24:00", "residence", "公邸"),
     ]);
-    expect(q).toEqual({ date: D, text: "短時間、式典への出席のため外出。それ以外は公邸で過ごす。", stay: false });
+    expect(q.stay).toBe(false);
+    expect(textsFor("shortOuting", { p: "式典への出席" })).toContain(q.text);
   });
 
   it("treats exactly 180 minutes away as short, 181 as not", () => {
     const at = (end) => [seg("00:00", "12:00", "residence", "公邸"), seg("12:00", end, "meeting", "官邸"), seg(end, "24:00", "residence", "公邸")];
-    expect(buildQuestion(D, at("15:00")).text).toMatch(/^短時間、/);
-    expect(buildQuestion(D, at("15:01")).text).toBe("面会対応のため外出。公邸にも一部滞在する。");
+    expect(textsFor("shortOuting", { p: "面会対応" })).toContain(buildQuestion(D, at("15:00")).text);
+    expect(textsFor("partialStay", { p: "面会対応" })).toContain(buildQuestion(D, at("15:01")).text);
   });
 
   it("picks the category with the most total minutes, summed across segments", () => {
@@ -89,17 +105,18 @@ describe("buildQuestion", () => {
       seg("13:00", "15:00", "meeting", "官邸"), // meeting total 4h beats diet 3h
       seg("15:00", "24:00", "residence", "公邸"),
     ]);
-    expect(q.text).toBe("面会対応のため外出。公邸にも一部滞在する。");
+    expect(textsFor("partialStay", { p: "面会対応" })).toContain(q.text);
   });
 
-  it("says 公邸には戻らず when no time was spent at 公邸", () => {
+  it("uses the no-公邸 phrasing when no time was spent at 公邸", () => {
     const q = buildQuestion(D, [seg("00:00", "06:00", "residence", "ホテル"), seg("06:00", "24:00", "diplomacy", "海外")]);
-    expect(q).toEqual({ date: D, text: "終日、外国訪問のため外出。公邸には戻らず。", stay: false });
+    expect(q.stay).toBe(false);
+    expect(textsFor("noStay", { p: "外国訪問" })).toContain(q.text);
   });
 
   it("uses 公務 for unknown categories", () => {
     const q = buildQuestion(D, [seg("00:00", "08:00", "residence", "公邸"), seg("08:00", "24:00", "brand_new_category", "官邸")]);
-    expect(q.text).toBe("公務のため外出。公邸にも一部滞在する。");
+    expect(textsFor("partialStay", { p: "公務" })).toContain(q.text);
   });
 
   it("never returns stay:true for a multi-segment day, even with zero work", () => {
@@ -107,6 +124,77 @@ describe("buildQuestion", () => {
     const q = buildQuestion(D, [seg("00:00", "12:00", "residence", "公邸"), seg("12:00", "24:00", "residence", "公邸")]);
     expect(q.stay).toBe(false);
     expect(q.text).not.toBe(STAY_TEXT);
+  });
+});
+
+describe("text variants", () => {
+  const dates = Array.from({ length: 60 }, (_, i) => {
+    const d = new Date(Date.UTC(2026, 10, 1) + i * 86400000);
+    return d.toISOString().slice(0, 10);
+  });
+  const partialDay = [seg("00:00", "08:00", "residence", "公邸"), seg("08:00", "20:00", "diet", "国会"), seg("20:00", "24:00", "residence", "公邸")];
+
+  it("keeps the stay:true text fixed on every date", () => {
+    expect(EXPORTED_STAY_TEXT).toBe(STAY_TEXT);
+    for (const d of dates) {
+      expect(buildQuestion(d, [seg("00:00", "24:00", "residence", "公邸")]).text).toBe(STAY_TEXT);
+    }
+  });
+
+  it("is deterministic: the same date always yields the same text", () => {
+    for (const d of dates) {
+      const a = buildQuestion(d, partialDay);
+      const b = buildQuestion(d, structuredClone(partialDay));
+      expect(b).toEqual(a);
+    }
+    expect(dateHash("2026-11-28")).toBe(dateHash("2026-11-28"));
+  });
+
+  it("pins the hash so the variant chosen for a date cannot silently change", () => {
+    // If this fails, every future date would get a different phrasing than before.
+    expect(dateHash("2026-11-01")).toBe(1897800060);
+    expect(dates.slice(0, 10).map((d) => dateHash(d) % 3)).toEqual([0, 0, 1, 0, 1, 1, 2, 0, 1, 0]);
+  });
+
+  it("actually uses every variant across a range of dates", () => {
+    for (const group of Object.keys(TEXT_VARIANTS)) {
+      const used = new Set(dates.map((d) => TEXT_VARIANTS[group].indexOf(pickVariant(d, TEXT_VARIANTS[group]))));
+      expect(used.size).toBe(TEXT_VARIANTS[group].length);
+    }
+  });
+
+  it("offers more than one distinct phrasing per case", () => {
+    for (const group of Object.keys(TEXT_VARIANTS)) {
+      expect(new Set(textsFor(group, { p: "公務", place: "宿舎" })).size).toBeGreaterThan(1);
+    }
+  });
+
+  it("every variant includes the given facts and nothing can collide with the stay text", () => {
+    for (const p of new Set(Object.values(CATEGORY_PHRASE))) {
+      for (const group of ["shortOuting", "partialStay", "noStay"]) {
+        for (const text of textsFor(group, { p })) {
+          expect(text).toContain(p);
+          expect(text).toContain("公邸");
+          expect(text).not.toBe(STAY_TEXT);
+        }
+      }
+    }
+    for (const text of textsFor("fullDayElsewhere", { place: "衆院議員宿舎" })) {
+      expect(text).toContain("衆院議員宿舎");
+      expect(text).toContain("公邸");
+      expect(text).not.toBe(STAY_TEXT);
+    }
+  });
+
+  it("only interpolates the documented inputs (no extra facts are invented)", () => {
+    // Rendering with sentinel values must leave no other placeholders or undefineds.
+    for (const group of Object.keys(TEXT_VARIANTS)) {
+      for (const text of textsFor(group, { p: "〈P〉", place: "〈PLACE〉" })) {
+        expect(text).not.toMatch(/undefined|null|\$\{/);
+        const stripped = text.replace("〈P〉", "").replace("〈PLACE〉", "");
+        expect(stripped).not.toMatch(/〈/);
+      }
+    }
   });
 });
 
