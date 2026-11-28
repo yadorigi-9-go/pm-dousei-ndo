@@ -18,7 +18,12 @@ node scripts/update-daily-question.mjs [YYYY-MM-DD]  # fetch+add one day's quest
 
 There is no lint command configured. Type checking happens as part of `astro build` (and via `@astrojs/check`, which astro build runs internally); there is no separate `tsc`/`astro check` script defined, so run `npx astro check` directly if you need type checking without a full build.
 
-Unit tests (Vitest) cover the pure, DOM-free helpers in `src/lib/quiz-utils.ts` only — there is no test coverage for the DOM/game-loop logic inline in `src/pages/index.astro`, since that code is tightly coupled to the DOM and not easily unit-tested in isolation.
+Vitest tests (`vitest.config.ts` excludes `.claude/**` and `dist/**`):
+- `src/lib/quiz-utils.test.ts` — the pure, DOM-free quiz helpers.
+- `src/content/questions.test.ts` — data-integrity checks over every real question file (filename = date, real date within tenure and not in the future, `stay:true` ⇔ text `終日、公邸で過ごす。`, exact field set). These enforce the README data rule; a bad question file fails `npm test`.
+- `scripts/lib/daily-question.test.mjs` — the update script's pure logic (`scripts/lib/daily-question.mjs`: page parsing, text/stay derivation, JST date math). Keep new script logic there, not in the network/fs wrapper `scripts/update-daily-question.mjs`.
+
+There is no coverage for the DOM/game-loop logic inline in `src/pages/index.astro`, since that code is tightly coupled to the DOM and not easily unit-tested in isolation.
 
 The site is deployed to GitHub Pages as a project page; `astro.config.mjs` sets `site`/`base` accordingly (`base: "/pm-dousei-ndo"`). If the repo is ever renamed, `base` must be updated to match.
 
@@ -26,7 +31,7 @@ The site is deployed to GitHub Pages as a project page; `astro.config.mjs` sets 
 
 - `ci.yml`: runs `npm test` and `npm run build` on every pull request.
 - `deploy.yml`: runs `npm test`, then builds and deploys to GitHub Pages, on every push to `main` (requires the repo's Pages source set to "GitHub Actions" in its settings — a one-time manual step, not something this workflow can do itself).
-- `update-daily-question.yml`: runs `scripts/update-daily-question.mjs` daily (07:30 JST, after kanteilog.com's ~07:00 JST data update); if a question was added, it pushes to a throwaway branch, opens a PR, and immediately merges it, since `main` has a branch ruleset requiring all changes go through a pull request.
+- `update-daily-question.yml`: runs `scripts/update-daily-question.mjs` daily (07:30 JST, after kanteilog.com's ~07:00 JST data update); if a question was added, it runs `npm test` (bot PRs made with `GITHUB_TOKEN` don't trigger `ci.yml`), then pushes to a throwaway branch, opens a PR, and immediately merges it, since `main` has a branch ruleset requiring all changes go through a pull request.
 
 ## Architecture
 

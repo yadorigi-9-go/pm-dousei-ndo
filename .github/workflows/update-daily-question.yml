@@ -25,6 +25,14 @@ jobs:
         id: fetch
         run: node scripts/update-daily-question.mjs
 
+      # PRs opened with GITHUB_TOKEN don't trigger ci.yml, so validate the new
+      # question here before auto-merging it.
+      - name: Validate question data
+        if: steps.fetch.outputs.wrote == 'true'
+        run: |
+          npm ci
+          npm test
+
       - name: Commit, open PR, and merge if a question was added
         if: steps.fetch.outputs.wrote == 'true'
         env:
