@@ -44,6 +44,6 @@ The site is deployed to GitHub Pages as a project page; `astro.config.mjs` sets 
 
 ### Data integrity rule (important when adding/editing question data)
 
-**`src/content/questions/README.md` is the single source of truth for the data-sourcing rule** (what counts as a fact vs. a quote, the two data sources by date range, `stay: true`/`false` criteria, and how `scripts/update-daily-question.mjs` derives `text`) — read it before adding or editing question data, rather than relying on a summary here that could drift out of sync.
+**`src/content/questions/README.md` is the single source of truth for the data-sourcing rule** (what counts as a fact vs. a quote, the data source (all files are generated from kanteilog.com structured data by the update script), `stay: true`/`false` criteria, and how `scripts/update-daily-question.mjs` derives `text`) — read it before adding or editing question data, rather than relying on a summary here that could drift out of sync.
 
 In short: `text` must be original Japanese prose, never a direct quote from source articles; `stay: true` requires `work_min == 0` AND location == 公邸 (official residence), with `text` fixed to `終日、公邸で過ごす。`; `stay: false` is everything else; all `date` values must be real and within the current PM's tenure.
