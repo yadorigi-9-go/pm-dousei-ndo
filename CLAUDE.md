@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev       # astro dev — local dev server
 npm run build     # astro build — type-checks via astro sync + outputs static site to dist/
 npm run preview   # astro preview — serve the built dist/ locally
-npm test          # vitest run — runs unit tests in src/lib/*.test.ts
+npm test          # vitest run — helper, question-data, and update-script tests (see below)
 node scripts/update-daily-question.mjs [YYYY-MM-DD]  # fetch+add one day's question from kanteilog.com (defaults to yesterday, JST); no-ops if the file already exists or the page isn't published yet
 ```
 
