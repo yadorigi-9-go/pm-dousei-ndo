@@ -75,13 +75,63 @@ export function isFullDay(seg) {
   return seg.startTime === "00:00" && seg.endTime === "24:00";
 }
 
+// Stay-day text: fixed by the README data rule, never varied.
+export const STAY_TEXT = "終日、公邸で過ごす。";
+
+// Phrasings for each non-stay case. Every variant in a group must state
+// exactly the same facts as the others (and only facts derived from the
+// structured segment data) — they differ in wording only. `p` is the
+// CATEGORY_PHRASE of the dominant category; `place` is the full-day location.
+export const TEXT_VARIANTS = {
+  // Whole day at a single non-公邸 residence.
+  fullDayElsewhere: [
+    ({ place }) => `終日、${place}で過ごす。公邸には立ち寄らず。`,
+    ({ place }) => `${place}で一日を過ごし、公邸には立ち寄らず。`,
+    ({ place }) => `公邸ではなく、終日${place}で過ごす。`,
+  ],
+  // Away from 公邸 for 3 hours or less; the rest of the day at 公邸.
+  shortOuting: [
+    ({ p }) => `短時間、${p}のため外出。それ以外は公邸で過ごす。`,
+    ({ p }) => `${p}のため短時間だけ外出し、ほかは公邸で過ごす。`,
+    ({ p }) => `外出は${p}のための短時間のみ。残りは公邸で過ごす。`,
+  ],
+  // Away for more than 3 hours, with some time at 公邸.
+  partialStay: [
+    ({ p }) => `${p}のため外出。公邸にも一部滞在する。`,
+    ({ p }) => `${p}を中心に外出し、公邸でも一部の時間を過ごす。`,
+    ({ p }) => `主に${p}のため外出。公邸で過ごす時間もある。`,
+  ],
+  // No time at 公邸 at all.
+  noStay: [
+    ({ p }) => `終日、${p}のため外出。公邸には戻らず。`,
+    ({ p }) => `${p}を中心に一日を過ごし、公邸には戻らず。`,
+    ({ p }) => `公邸に戻ることなく、${p}を中心に一日を過ごす。`,
+  ],
+};
+
+// FNV-1a (32-bit) over the date string: a stable, dependency-free hash so the
+// same date always picks the same variant, on any machine and any run.
+export function dateHash(dateStr) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < dateStr.length; i++) {
+    h ^= dateStr.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h;
+}
+
+export function pickVariant(dateStr, variants) {
+  return variants[dateHash(dateStr) % variants.length];
+}
+
 export function buildQuestion(dateStr, segments) {
   if (segments.length === 1 && segments[0].category === "residence" && isFullDay(segments[0])) {
     if (segments[0].location === "公邸") {
-      return { date: dateStr, text: "終日、公邸で過ごす。", stay: true };
+      return { date: dateStr, text: STAY_TEXT, stay: true };
     }
     const place = segments[0].location || "別の場所";
-    return { date: dateStr, text: `終日、${place}で過ごす。公邸には立ち寄らず。`, stay: false };
+    const text = pickVariant(dateStr, TEXT_VARIANTS.fullDayElsewhere)({ place });
+    return { date: dateStr, text, stay: false };
   }
 
   let residenceAtKantei = 0;
@@ -106,17 +156,13 @@ export function buildQuestion(dateStr, segments) {
     }
   }
 
-  const phrase = CATEGORY_PHRASE[dominantCategory] ?? "公務";
+  const p = CATEGORY_PHRASE[dominantCategory] ?? "公務";
   const awayMinutes = 1440 - residenceAtKantei;
 
-  let text;
-  if (awayMinutes <= 180) {
-    text = `短時間、${phrase}のため外出。それ以外は公邸で過ごす。`;
-  } else if (residenceAtKantei > 0) {
-    text = `${phrase}のため外出。公邸にも一部滞在する。`;
-  } else {
-    text = `終日、${phrase}のため外出。公邸には戻らず。`;
-  }
+  let group;
+  if (awayMinutes <= 180) group = TEXT_VARIANTS.shortOuting;
+  else if (residenceAtKantei > 0) group = TEXT_VARIANTS.partialStay;
+  else group = TEXT_VARIANTS.noStay;
 
-  return { date: dateStr, text, stay: false };
+  return { date: dateStr, text: pickVariant(dateStr, group)({ p }), stay: false };
 }
