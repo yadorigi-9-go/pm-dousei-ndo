@@ -44,6 +44,15 @@ export function calcScore(totalChars: number, revealCount: number): number {
   return Math.max(10, Math.round(100 * (1 - revealCount / totalChars)));
 }
 
-export function formatShareDate(now: Date = new Date()): string {
+/**
+ * Format the date shown at the top of the share text. Pass the question's ISO
+ * date (YYYY-MM-DD) so the shared date is the day the question describes, not
+ * the day it was played; with no date, falls back to today's local date.
+ */
+export function formatShareDate(iso?: string, now: Date = new Date()): string {
+  if (iso) {
+    const [y, m, d] = iso.split("-").map(Number);
+    return `${y}/${m}/${d}`;
+  }
   return `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
 }

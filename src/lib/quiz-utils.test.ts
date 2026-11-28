@@ -36,9 +36,18 @@ describe("getYesterdayISO", () => {
 });
 
 describe("formatShareDate", () => {
-  it("formats a date as Y/M/D without zero-padding", () => {
-    expect(formatShareDate(new Date(2026, 10, 22))).toBe("2026/11/22");
-    expect(formatShareDate(new Date(2026, 0, 1))).toBe("2026/1/1");
+  it("formats the question's ISO date as Y/M/D without zero-padding", () => {
+    expect(formatShareDate("2026-11-22")).toBe("2026/11/22");
+    expect(formatShareDate("2026-01-01")).toBe("2026/1/1");
+  });
+
+  it("uses the question date, not the current date, when given one", () => {
+    expect(formatShareDate("2026-11-20", new Date(2026, 10, 28))).toBe("2026/11/20");
+  });
+
+  it("falls back to the current date when no question date is given", () => {
+    expect(formatShareDate(undefined, new Date(2026, 10, 22))).toBe("2026/11/22");
+    expect(formatShareDate(undefined, new Date(2026, 0, 1))).toBe("2026/1/1");
   });
 });
 
