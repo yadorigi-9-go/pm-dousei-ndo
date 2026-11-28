@@ -138,6 +138,8 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     let deck: Question[] = [];
     let restQuestions: Question[] = [];
     let mode: "daily" | "practice" = "daily";
+    // 1問モードで出題した問題の日付（シェア文の日付に使う）。練習モードのみの場合は undefined。
+    let dailyDate: string | undefined;
     let qPos = 0;
     let score = 0;
     let correctCount = 0;
@@ -153,6 +155,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
       const yesterday = getYesterdayISO();
       const dailyQ = pickDailyQuestion(QUESTIONS, yesterday);
       restQuestions = QUESTIONS.filter((q) => q !== dailyQ);
+      dailyDate = dailyQ?.date;
 
       if (dailyQ) {
         mode = "daily";
@@ -328,7 +331,7 @@ const questions = (await getCollection("questions")).map((entry) => entry.data);
     }
 
     async function onShareClick(): Promise<void> {
-      const dateLabel = formatShareDate();
+      const dateLabel = formatShareDate(dailyDate);
       const text = `${dateLabel}\n\n${answerRows.join("\n")}\n${totalAnswered}問中${correctCount}問正解。スコア${score}点でした！\n\n#首相動静日めくりクイズ\n\n${location.href}`;
       if (navigator.share) {
         try {
